@@ -1,3 +1,5 @@
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply from: "$rootDir/gradle/publishMaven.gradle"
 
 description = "Java port of Stefan Goessner JsonPath."
@@ -14,11 +16,11 @@ jar {
 dependencies {
     compile libs.jsonSmart
     compile libs.slf4jApi
-    compile libs.jacksonDatabind, optional
-    compile libs.gson, optional
-    compile libs.jsonOrg, optional
-    compile libs.tapestryJson, optional
-    compile libs.jettison, optional
+    compile libs.jacksonDatabind, { ext.set('optional',true) }
+    compile libs.gson, { ext.set('optional',true) }
+    compile libs.jsonOrg, { ext.set('optional',true) }
+    compile libs.tapestryJson, { ext.set('optional',true) }
+    compile libs.jettison, { ext.set('optional',true) }
 
     testCompile libs.test
 }
@@ -106,3 +108,27 @@ task dist(){
 }
 dist.dependsOn distZip
 dist.dependsOn distTar
+
+publishing {
+  publications {
+    mavenJar(MavenPublication){
+      from(project.components.java)
+      project.configurations[JavaPlugin.RUNTIME_CONFIGURATION_NAME].allDependencies.findAll {
+      println it.toString()+","+it.hasProperty('optional')
+        it instanceof ModuleDependency && it.hasProperty('optional') && it.optional==true
+      } .each { ModuleDependency dep ->
+        pom.withXml {
+          def xmlDep=asNode().dependencies.dependency.find {
+            it.groupId[0].text()==dep.group && it.artifactId[0].text()==dep.name && it.version[0].text()==dep.version
+          }
+          xmlDep.appendNode('optional','true')
+        }
+      }
+    }
+  }
+  repositories {
+    maven { url uri('../../artifacts/repo') }
+  }
+}
+
+
