@@ -346,7 +346,9 @@ public class PathCompilerTest {
         + "  ]\n"
         + "}";
     DocumentContext doc = JsonPath.parse(jsonstr);
+    //Object obj = doc.read("first($.phoneNumbers[?(@.type!='')].type).concat(\",ABCD,\").first($.phoneNumbers[?(@.type!='')].number)");
     Object obj = doc.read("first($.phoneNumbers[?(@.type!='')].type).concat(\",ABCD,\").first($.phoneNumbers[?(@.type!='')].number)");
     assertThat(obj.equals("iPhone,ABCD,0123-4567-8888"));
+    System.out.println(obj);
   }
 }
