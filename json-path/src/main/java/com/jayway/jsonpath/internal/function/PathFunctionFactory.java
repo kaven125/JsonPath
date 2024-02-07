@@ -64,6 +64,12 @@ public class PathFunctionFactory {
     }
   }
 
+  public static void putFunction(String functionName, Class<? extends PathFunction> functionClass) throws InvalidPathException {
+    if (functionName != null && functionClass != null) {
+      map.put(functionName, functionClass);
+    }
+  }
+
   /**
    * Returns the function by name or throws InvalidPathException if function not found.
    *
