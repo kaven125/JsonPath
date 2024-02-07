@@ -1,0 +1,128 @@
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply from: "$rootDir/gradle/publishMaven.gradle"
+
+description = "Java port of Stefan Goessner JsonPath."
+
+jar {
+    baseName 'json-path'
+    bnd (
+        'Implementation-Title': 'json-path', 'Implementation-Version': version,
+        'Import-Package': 'org.json.*;resolution:=optional, com.google.gson.*;resolution:=optional, com.fasterxml.jackson.*;resolution:=optional, org.apache.tapestry5.json.*;resolution:=optional, org.codehaus.jettison.*;resolution:=optional, *',
+        'Export-Package': 'com.jayway.jsonpath,com.jayway.jsonpath.spi,com.jayway.jsonpath.spi.cache,com.jayway.jsonpath.spi.json,com.jayway.jsonpath.spi.mapper'
+    )
+}
+
+dependencies {
+    compile project(':json-path')
+
+    testCompile libs.test
+}
+
+task distZip(type: Zip, dependsOn: assemble) {
+    classifier = 'with-dependencies'
+
+    from('build/docs') {
+        into 'api'
+    }
+    from(sourcesJar) {
+        into 'source'
+    }
+    from(jar) {
+        into 'lib'
+    }
+    from(project.configurations.compile) {
+        into 'lib'
+        exclude { it.file.name.contains('gson') || it.file.name.contains('jackson') || it.file.name.contains('json-2') || it.file.name.contains('jettison') || it.file.name.contains('tapestry') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jackson'
+        include { it.file.name.contains('jackson') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/gson'
+        include { it.file.name.contains('gson') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jettison'
+        include { it.file.name.contains('jettison') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jsonOrg'
+        include { it.file.name.contains('json-2') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/tapestry'
+        include { it.file.name.contains('tapestry') }
+    }
+}
+
+task distTar(type: Tar, dependsOn: assemble) {
+    classifier = 'with-dependencies'
+    compression = Compression.GZIP
+    extension = 'tar.gz'
+
+    from('build/docs') {
+        into 'api'
+    }
+    from(sourcesJar) {
+        into 'source'
+    }
+    from(jar) {
+        into 'lib'
+    }
+    from(project.configurations.compile) {
+        into 'lib'
+        exclude { it.file.name.contains('gson') || it.file.name.contains('jackson') || it.file.name.contains('json-2') || it.file.name.contains('jettison') || it.file.name.contains('tapestry') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jackson'
+        include { it.file.name.contains('jackson') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/gson'
+        include { it.file.name.contains('gson') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jettison'
+        include { it.file.name.contains('jettison') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/jsonOrg'
+        include { it.file.name.contains('json-2') }
+    }
+    from(project.configurations.compile) {
+        into 'lib-optional/tapestry'
+        include { it.file.name.contains('tapestry') }
+    }
+}
+
+task dist(){
+
+}
+dist.dependsOn distZip
+dist.dependsOn distTar
+
+publishing {
+  publications {
+    mavenJar(MavenPublication){
+      from(project.components.java)
+      project.configurations[JavaPlugin.RUNTIME_CONFIGURATION_NAME].allDependencies.findAll {
+      println it.toString()+","+it.hasProperty('optional')
+        it instanceof ModuleDependency && it.hasProperty('optional') && it.optional==true
+      } .each { ModuleDependency dep ->
+        pom.withXml {
+          def xmlDep=asNode().dependencies.dependency.find {
+            it.groupId[0].text()==dep.group && it.artifactId[0].text()==dep.name && it.version[0].text()==dep.version
+          }
+          xmlDep.appendNode('optional','true')
+        }
+      }
+    }
+  }
+  repositories {
+    maven { url uri('../../artifacts/repo') }
+  }
+}
+
+
